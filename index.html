@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mancomunidad de los Canales del Taibilla - MCT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<!-- Soporte PWA para iOS / Safari Móvil -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pathway+Gothic+One&display=swap" rel="stylesheet">
+
+<!-- API de YouTube Iframe -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<style>
+  :root{
+    --bg: #10151f;   
+    --panel: #161d2b;   
+    --line: #2a3346;   
+    --text: #f2f0ea;   
+    --text-dim: #8b96ac;   
+    --accent: #34d8c1;   
+    --accent-warm: #f5a623;   
+    
+    --aemet-yellow-bg: rgba(236, 201, 75, 0.18);
+    --aemet-yellow-border: #d69e2e;
+    --aemet-yellow-text: #f6e05e;
+
+    --aemet-orange-bg: rgba(237, 137, 54, 0.2);
+    --aemet-orange-border: #dd6b20;
+    --aemet-orange-text: #fbd38d;
+
+    --aemet-red-bg: rgba(229, 62, 62, 0.25);
+    --aemet-red-border: #e53e3e;
+    --aemet-red-text: #feb2b2;
+
+    --ticker-h: clamp(40px, 5vh, 54px);     
+    --brand-footer-h: clamp(75px, 11vh, 110px);    
+    --font-display: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'Consolas', 'SFMono-Regular', 'Menlo', monospace;
+    --font-slogan: 'Breathing', 'Brush Script MT', cursive; 
+    --font-cta: 'Pathway Gothic One', sans-serif;        
+    --side-padding: clamp(16px, 2vw, 32px);
+  }
+
+  @font-face{
+    font-family:'Breathing';
+    src: url('fonts/Breathing.woff2') format('woff2'),
+         url('fonts/Breathing.woff') format('woff');
+    font-weight:normal;
+    font-style:normal;
+    font-display:swap;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--bg); color:var(--text);
+    font-family:var(--font-display);
+    overflow:hidden;
+  }
+
+  .signage{ display:flex; flex-direction:column; width:100vw; height:100vh; }
+  .top-row{ flex:1 1 auto; display:flex; min-height:0; }
+
+  .weather-panel{
+    flex: 0 0 clamp(260px, 22vw, 360px);
+    max-width: 380px;
+    background:var(--panel);
+    border-right:1px solid var(--line); 
+    display:flex; 
+    flex-direction:column;
+    padding:1.8vh 14px 1.8vh var(--side-padding); 
+    position:relative;
+    overflow:hidden;
+  }
+
+  .clock {
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+    background: #ffffff;
+    color: #161d2b;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 1.5vh;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+  }
+  .clock .time {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 600;
+    line-height: 1;
+    color: #161d2b;
+    white-space: nowrap;
+  }
+  .clock .date {
+    margin-top: .3em;
+    font-size: clamp(0.75rem, 0.95vw, 0.95rem);
+    color: #161d2b;
+    opacity: 0.85;
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .weather-info-box {
+    display:flex; flex-direction:column; flex:1 1 auto;
+    transition:opacity .4s ease, transform .4s ease; opacity:1;
+    transform:translateY(0); min-height:0; overflow:hidden;
+  }
+
+  .weather-info-box.changing { opacity:0; transform:translateY(-8px); }
+  .weather-city{ font-size:clamp(0.9rem, 1.1vw, 1.15rem); color:var(--text-dim); text-transform:uppercase; letter-spacing:.1em; margin-bottom:.3em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .weather-main{ display:flex; align-items:center; gap:.4em; }
+  .weather-icon{ font-size:clamp(2.5rem, 4.5vw, 3.8rem); line-height:1; flex-shrink:0; }
+  .weather-temp{ font-size:clamp(2rem, 3.8vw, 3.2rem); font-weight:700; font-family:var(--font-mono); }
+  .weather-desc{ margin-top:.2em; font-size:clamp(0.8rem, 1vw, 1rem); color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .weather-extra{ 
+    display:flex; justify-content:space-between; 
+    font-size:clamp(0.7rem, 0.85vw, 0.85rem); color:var(--text-dim); 
+    background:rgba(255, 255, 255, 0.03); padding:.5em .7em;
+    border-radius:6px; border:1px solid var(--line); margin-top:1vh;
+    flex-shrink: 0;
+  }
+  .weather-extra b{ color:var(--text); font-family:var(--font-mono); }
+
+  .aemet-alert-card {
+    margin:1vh 0; padding:6px 8px; border-radius:6px; border:1px solid;
+    display:flex; flex-direction:column; gap:3px; font-size:0.75rem; transition:all 0.3s ease;
+    flex-shrink: 0;
+  }
+  .aemet-alert-card.hidden { display:none; }
+
+  .aemet-alert-card.amarillo { background:var(--aemet-yellow-bg); border-color:var(--aemet-yellow-border); color:var(--aemet-yellow-text); }
+  .aemet-alert-card.naranja { background:var(--aemet-orange-bg); border-color:var(--aemet-orange-border); color:var(--aemet-orange-text); }
+  .aemet-alert-card.rojo { background:var(--aemet-red-bg); border-color:var(--aemet-red-border); color:var(--aemet-red-text); animation:pulseRed 2s infinite ease-in-out; }
+
+  @keyframes pulseRed {
+    0%, 100% { border-color:var(--aemet-red-border); box-shadow:0 0 0px rgba(229,62,62,0); }
+    50% { border-color:#ff6b6b; box-shadow:0 0 8px rgba(229,62,62,0.5); }
+  }
+
+  .aemet-header { display:flex; align-items:center; justify-content:space-between; font-weight:700; text-transform:uppercase; font-size:0.68rem; letter-spacing:0.05em; }
+  .aemet-badge { padding:2px 5px; border-radius:3px; font-size:0.65rem; font-weight:800; color:#10151f; }
+  .amarillo .aemet-badge { background:#f6e05e; }
+  .naranja .aemet-badge { background:#ed8936; color:#fff; }
+  .rojo .aemet-badge { background:#e53e3e; color:#fff; }
+
+  .aemet-title { font-weight:700; font-size:0.8rem; margin-top:2px; line-height:1.2; }
+  .aemet-detail { font-size:0.7rem; opacity:0.9; line-height:1.2; }
+
+  .weather-forecast{ 
+    display:flex; flex-direction:column; gap:.1em; flex:1 1 auto; min-height:0; 
+    justify-content:space-evenly; overflow-y:auto; border-top:1px solid var(--line);
+    padding-top:0.8vh; margin-top:auto;
+  }
+  
+  .forecast-day{ display:flex; align-items:center; justify-content:space-between; gap:.3em; padding:.18em 0; border-bottom:1px solid var(--line); }
+  .forecast-day:last-child{ border-bottom:none; }
+  .forecast-day .day-name{ flex:0 0 3em; font-size:clamp(0.68rem, 0.8vw, 0.8rem); color:var(--text-dim); text-transform:capitalize; }
+  
+  .forecast-day .day-condition{ 
+    flex:1 1 auto; display:flex; align-items:center; gap:.25em; 
+    font-size:clamp(0.65rem, 0.78vw, 0.78rem); color:var(--text); overflow:hidden;
+  }
+  .forecast-day .day-condition .icon{ flex:0 0 auto; font-size:clamp(0.8rem, 1vw, 1rem); }
+  .forecast-day .day-condition .text{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:0.9; }
+
+  .forecast-day .day-temps{ flex:0 0 auto; text-align:right; font-family:var(--font-mono); font-size:clamp(0.68rem, 0.8vw, 0.8rem); }
+  .forecast-day .day-temps .max{ color:var(--text); font-weight:600; }
+  .forecast-day .day-temps .min{ color:var(--text-dim); margin-left:.2em; }
+
+  .content-panel{ flex:1 1 80%; position:relative; background:#000; overflow:hidden; }
+  
+  .slide{
+    position:absolute; inset:0; width:100%; height:100%; opacity:0;
+    visibility:hidden; transition:opacity 1s ease-in-out, visibility 1s ease-in-out;
+    z-index:1; background:#000;
+  }
+  
+  .slide.active{ opacity:1; visibility:visible; z-index:2; }
+  .slide img { width:100%; height:100%; object-fit:cover; }
+  .slide iframe { width:100%; height:100%; border:none; pointer-events:none; }
+
+  .news-bg { transform:scale(1); transition:transform 0.5s ease-out; }
+  .slide.active .news-bg { animation:kenburns 11s ease-in-out forwards; }
+  @keyframes kenburns { from { transform:scale(1); } to { transform:scale(1.06); } }
+
+  .news-overlay{ position:absolute; inset:0; background:linear-gradient(0deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 50%, transparent 100%); }
+  .news-text{ position:absolute; left:0; right:0; bottom:0; padding:4vh clamp(16px, 3vw, 32px); max-width:92%; }
+
+  .news-kicker, .news-title, .news-subtitle { opacity:0; transform:translateY(30px); }
+  .slide.active .news-kicker { animation:newsIn 0.6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:0.2s; }
+  .slide.active .news-title { animation:newsIn 0.7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:0.4s; }
+  .slide.active .news-subtitle { animation:newsIn 0.7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:0.6s; }
+
+  @keyframes newsIn { to { opacity:1; transform:translateY(0); } }
+
+  .news-kicker{ display:inline-block; color:#1a1200; background:var(--accent-warm); font-weight:700; letter-spacing:.1em; text-transform:uppercase; font-size:clamp(0.7rem, 0.9vw, 0.85rem); padding:.3em .8em; border-radius:2px; margin-bottom:0.8em; }
+  .news-title{ margin:0 0 .3em; font-size:clamp(1.5rem, 2.8vw, 2.5rem); font-weight:700; line-height:1.2; text-shadow:0 2px 10px rgba(0,0,0,0.5); }
+  .news-subtitle{ margin:0; color:#e4e1d8; font-size:clamp(0.9rem, 1.2vw, 1.2rem); line-height:1.35; text-shadow:0 1px 6px rgba(0,0,0,0.5); }
+
+  .ticker-bar{ flex:0 0 var(--ticker-h); height:var(--ticker-h); display:flex; align-items:stretch; background:var(--panel); border-top:1px solid var(--line); }
+  .ticker-label{ flex:0 0 auto; display:flex; align-items:center; gap:.5em; padding:0 16px 0 var(--side-padding); background:var(--accent-warm); color:#1a1200; font-weight:700; letter-spacing:.08em; font-size:clamp(0.75rem,0.95vw,0.95rem); white-space:nowrap; }
+  .ticker-viewport{ flex:1 1 auto; position:relative; overflow:hidden; }
+  .ticker-track{ position:absolute; top:0; left:0; height:100%; display:flex; align-items:center; white-space:nowrap; will-change:transform; animation:scroll-left linear infinite; font-size:clamp(0.85rem,1.1vw,1.1rem); }
+  .ticker-track .item{ padding:0 3vw; color:var(--text); }
+  .ticker-track .item::before{ content:"●"; color:var(--accent-warm); margin-right:1em; font-size:.6em; vertical-align:middle; }
+  @keyframes scroll-left{ from{ transform:translateX(0); } to { transform:translateX(-50%); } }
+
+  /* BRAND FOOTER */
+  .brand-footer {
+    flex:0 0 var(--brand-footer-h); height:var(--brand-footer-h);
+    background-color:#ffffff; color:#1a202c; display:flex;
+    justify-content:space-between; align-items:center;
+    padding:0 16px 0 var(--side-padding); border-top:2px solid #e2e8f0;
+    gap: 15px;
+  }
+  
+  .footer-left { display:flex; align-items:center; gap:clamp(10px, 1.5vw, 25px); height:100%; flex-shrink: 0; }
+  .logo-transicion { height:65%; width:auto; max-width:240px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .logo-transicion img { max-width:100%; max-height:100%; object-fit:contain; }
+  .logo-mct { height:65%; width:auto; max-width:160px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .logo-mct img { max-width:100%; max-height:100%; object-fit:contain; }
+  .footer-slogan { font-family:var(--font-slogan); font-size:clamp(1rem, 1.2vw, 1.3rem); color:#393735; margin-left:5px; white-space:nowrap; }
+  .footer-right { display:flex; align-items:center; gap:clamp(10px, 1.5vw, 25px); flex-grow:1; justify-content:flex-end; height:100%; }
+  .cta-redes { font-family:var(--font-cta); font-size:clamp(1.1rem, 1.4vw, 1.6rem); letter-spacing:0.03em; font-weight:400; color:#393735; text-align:right; line-height:1; white-space:nowrap; }
+  .qr-box { height:70%; aspect-ratio: 1/1; background:#edf2f7; border:1px dashed #cbd5e0; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
+  .qr-box img { max-width:100%; max-height:100%; object-fit:contain; }
+
+  .fs-toggle-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 9999;
+    background: rgba(22, 29, 43, 0.85);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    transition: opacity 0.3s ease, transform 0.2s ease;
+  }
+  .fs-toggle-btn:active { transform: scale(0.95); }
+  .fs-toggle-btn.hidden { opacity: 0; pointer-events: none; }
+
+  @media (max-height: 720px) {
+    .clock { padding: 8px 10px; margin-bottom: 1vh; }
+    .clock .time { font-size: 1.8rem; }
+    .clock .date { font-size: 0.75rem; }
+    .weather-icon { font-size: 2.2rem; }
+    .weather-temp { font-size: 1.8rem; }
+    .footer-slogan { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<button class="fs-toggle-btn" id="fs-btn">
+  <span>⛶</span> Pantalla Completa
+</button>
+
+<div class="signage" id="signage-root">
+  <div class="top-row">
+    <aside class="weather-panel">
+      <div class="clock">
+        <div class="time" id="clock-time">--:--</div>
+        <div class="date" id="clock-date">-</div>
+      </div>
+      
+      <div class="weather-info-box" id="weather-info-box">
+        <div class="weather-city" id="weather-city">Cargando…</div>
+        <div class="weather-main">
+          <div class="weather-icon" id="weather-icon">⏳</div>
+          <div class="weather-temp" id="weather-temp">--°</div>
+        </div>
+        <div class="weather-desc" id="weather-desc">Obteniendo datos…</div>
+
+        <div class="weather-extra">
+          <div>Humedad <b id="weather-humidity">--%</b></div>
+          <div>Viento <b id="weather-wind">-- km/h</b></div>
+        </div>
+        
+        <div class="aemet-alert-card hidden" id="aemet-alert-card">
+          <div class="aemet-header">
+            <span>⚠️ AVISO AEMET</span>
+            <span class="aemet-badge" id="aemet-badge">AMARILLO</span>
+          </div>
+          <div class="aemet-title" id="aemet-title">Temperaturas Máximas</div>
+          <div class="aemet-detail" id="aemet-detail">Hasta 39ºC en el Valle del Guadalentín.</div>
+        </div>
+
+        <div class="weather-forecast" id="weather-forecast"></div>
+      </div>
+    </aside>
+
+    <main class="content-panel" id="content-panel">
+      <!-- Contenidos inyectados dinámicamente desde Google Sheets -->
+    </main>
+  </div>
+
+  <section class="ticker-bar">
+    <div class="ticker-label">📰 NOTICIAS DE ESPAÑA</div>
+    <div class="ticker-viewport">
+      <div class="ticker-track" id="ticker-track">
+        <span class="item">Cargando titulares…</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="brand-footer">
+    <div class="footer-left">
+      <div class="logo-transicion">
+        <img src="Imagenes/footer/VICE3.jpg" alt="Ministerio para la Transición Ecológica" data-cachebust>
+      </div>
+      <div class="logo-mct">
+        <img src="Imagenes/footer/logomct.png" alt="MCT" data-cachebust>
+      </div>
+      <span class="footer-slogan">Muy Cerca de Ti</span>
+    </div>
+    <div class="footer-right">
+      <div class="qr-box">
+        <img src="Imagenes/footer/qrmct.png" alt="QR de la MCT" data-cachebust>
+      </div>
+      <div class="cta-redes">¡Sigue a la MCT en redes sociales!</div>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ===============================================================
+// CONFIGURACIÓN DE LAS HOJAS DE CÁLCULO DE GOOGLE (CSV)
+// ===============================================================
+const URL_CSV_NOTICIAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDgXkCTepu3GbZ9G7T_s-qheD0AnQ1JVwDZronL3eYM50z4eCnFcz-ArDSbEJRuqJB50WHczyVfO4T/pub?gid=0&single=true&output=csv";
+const URL_CSV_VIDEOS   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDgXkCTepu3GbZ9G7T_s-qheD0AnQ1JVwDZronL3eYM50z4eCnFcz-ArDSbEJRuqJB50WHczyVfO4T/pub?gid=797206478&single=true&output=csv";
+
+// ---------------------------------------------------------------
+// PANTALLA COMPLETA
+// ---------------------------------------------------------------
+const fsBtn = document.getElementById('fs-btn');
+
+function toggleFullscreen() {
+  const doc = document.documentElement;
+  const isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+
+  if (!isFS) {
+    const request = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
+    if (request) {
+      request.call(doc).then(() => {
+        fsBtn.classList.add('hidden');
+      }).catch(err => {
+        console.warn("Fullscreen bloqueado por el navegador:", err);
+      });
+    }
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+    if (exit) {
+      exit.call(document);
+    }
+  }
+}
+
+['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    const isFS = document.fullscreenElement || document.webkitFullscreenElement;
+    if (isFS) {
+      fsBtn.classList.add('hidden');
+    } else {
+      fsBtn.classList.remove('hidden');
+    }
+  });
+});
+
+fsBtn.addEventListener('click', toggleFullscreen);
+
+const autoFSHandler = () => {
+  toggleFullscreen();
+  ['click', 'touchstart'].forEach(e => document.removeEventListener(e, autoFSHandler));
+};
+['click', 'touchstart'].forEach(e => document.addEventListener(e, autoFSHandler, { once: true }));
+
+// ---------------------------------------------------------------
+// PARSER DE CSV Y CARGA DE CONTENIDOS (GOOGLE SHEETS)
+// ---------------------------------------------------------------
+let slides = [];
+let currentSlideIndex = 0;
+let slideTimeout = null;
+let ytPlayer = null;
+let isYTReady = false;
+
+function onYouTubeIframeAPIReady() {
+  isYTReady = true;
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n');
+  const result = [];
+  if (lines.length === 0) return result;
+  
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"(.*)"$/, '$1').toLowerCase());
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const currentline = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+    const obj = {};
+    for (let j = 0; j < headers.length; j++) {
+      let val = currentline[j] ? currentline[j].trim() : '';
+      val = val.replace(/^"(.*)"$/, '$1');
+      obj[headers[j]] = val;
+    }
+    result.push(obj);
+  }
+  return result;
+}
+
+function extractYouTubeID(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : url;
+}
+
+async function loadDynamicContent() {
+  const container = document.getElementById('content-panel');
+  try {
+    const bust = `&v=${Date.now()}`;
+    
+    // Descargamos ambas pestañas en paralelo
+    const [resNoticias, resVideos] = await Promise.all([
+      fetch(`${URL_CSV_NOTICIAS}${bust}`),
+      fetch(`${URL_CSV_VIDEOS}${bust}`)
+    ]);
+
+    let itemsNoticias = [];
+    let itemsVideos = [];
+
+    if (resNoticias.ok) {
+      const text = await resNoticias.text();
+      itemsNoticias = parseCSV(text).map(item => ({ ...item, defaultType: 'news' }));
+    }
+
+    if (resVideos.ok) {
+      const text = await resVideos.text();
+      itemsVideos = parseCSV(text).map(item => ({ ...item, defaultType: 'video' }));
+    }
+
+    // Combinamos las filas de ambas pestañas
+    const items = [...itemsNoticias, ...itemsVideos];
+    
+    container.innerHTML = '';
+
+    items.forEach((item, idx) => {
+      const slideDiv = document.createElement('div');
+      slideDiv.className = `slide ${idx === 0 ? 'active' : ''}`;
+      
+      const type = (item.tipo || item.type || item.defaultType || 'news').toLowerCase();
+      slideDiv.setAttribute('data-type', type);
+      
+      // 4. TIEMPO DE NOTICIAS: Por defecto 10 segundos (10000ms) si no especifica otra en 'duracion' o 'duración'
+      const durRaw = parseInt(item.duracion || item['duración'] || item.duration);
+      const duration = !isNaN(durRaw) && durRaw > 0 ? durRaw : 10000;
+      slideDiv.setAttribute('data-duration', duration);
+
+      if (type === 'video' || type === 'youtube') {
+        // 5. PASO A VÍDEOS: Mapea la columna 'vídeos' o 'video'
+        const videoId = extractYouTubeID(item['vídeos'] || item.videos || item.video || item.src || item.url || item.link);
+        slideDiv.setAttribute('data-youtube-id', videoId);
+        slideDiv.innerHTML = `<div id="yt-player-${idx}" style="width:100%;height:100%;"></div>`;
+      } else {
+        // 1. ANTETÍTULO: Mapea 'antetítulo' o 'antetitulo'
+        const antetituloVal = item['antetítulo'] || item.antetitulo || item.categoria || item.kicker || 'ACTUALIDAD';
+        
+        // 2. TITULAR: Mapea 'titular'
+        const titularVal = item.titular || item.titulo || item.title || '';
+        
+        // 3. IMAGEN: Mapea 'imagen_url'
+        const imagenUrlVal = item.imagen_url || item.imagen || item.image || '';
+
+        slideDiv.innerHTML = `
+          <img class="news-bg" src="${imagenUrlUrlVal || imagenUrlVal}" alt="${titularVal}" data-cachebust>
+          <div class="news-overlay"></div>
+          <div class="news-text">
+            <div class="news-kicker">${antetituloVal}</div>
+            <h2 class="news-title">${titularVal}</h2>
+            <p class="news-subtitle">${item.subtitulo || item.subtitle || ''}</p>
+          </div>
+        `;
+      }
+
+      container.appendChild(slideDiv);
+    });
+
+    slides = document.querySelectorAll('.slide');
+    applyCacheBusting();
+    if (slides.length > 0) {
+      scheduleNext(slides[0]);
+    }
+  } catch (err) {
+    console.error("Error al cargar los contenidos desde Google Sheets:", err);
+  }
+}
+
+// ---------------------------------------------------------------
+// ROTACIÓN DE SLIDES Y REPRODUCCIÓN DE YOUTUBE
+// ---------------------------------------------------------------
+function rotateSlides() {
+  if (!slides || slides.length === 0) return;
+  
+  const currentSlide = slides[currentSlideIndex];
+  currentSlide.classList.remove('active');
+
+  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+    try { ytPlayer.destroy(); } catch(e) {}
+    ytPlayer = null;
+  }
+
+  currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+  const nextSlide = slides[currentSlideIndex];
+  nextSlide.classList.add('active');
+  scheduleNext(nextSlide);
+}
+
+function scheduleNext(slideElement) {
+  clearTimeout(slideTimeout);
+  const type = slideElement.getAttribute('data-type');
+
+  if (type === 'video' || type === 'youtube') {
+    const videoId = slideElement.getAttribute('data-youtube-id');
+    const playerContainer = slideElement.querySelector('div[id^="yt-player-"]');
+    
+    if (videoId && playerContainer && isYTReady) {
+      ytPlayer = new YT.Player(playerContainer.id, {
+        videoId: videoId,
+        playerVars: {
+          'autoplay': 1,
+          'controls': 0,
+          'mute': 1,
+          'rel': 0,
+          'modestbranding': 1,
+          'playsinline': 1
+        },
+        events: {
+          'onReady': (event) => {
+            event.target.playVideo();
+          },
+          'onStateChange': (event) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              rotateSlides();
+            }
+          },
+          'onError': () => {
+            // Manejo de error para que la pantalla en negro no se cuelgue si falla un vídeo
+            slideTimeout = setTimeout(rotateSlides, 5000);
+          }
+        }
+      });
+    } else {
+      // Si la API de YouTube no está lista o falta ID, salta tras el tiempo
+      slideTimeout = setTimeout(rotateSlides, 10000);
+    }
+  } else {
+    // 4. TIEMPO DE NOTICIAS: Toma el valor data-duration (10000ms por defecto)
+    const duration = parseInt(slideElement.getAttribute('data-duration')) || 10000;
+    slideTimeout = setTimeout(rotateSlides, duration);
+  }
+}
+
+// ---------------------------------------------------------------
+// CONFIGURACIÓN CLIMÁTICA Y LOGICA EXISTENTE
+// ---------------------------------------------------------------
+const CITIES = [
+  { name: "Abanilla", lat: 38.2052, lon: -1.0413, zone: "Vega del Segura" },
+  { name: "Abarán", lat: 38.2036, lon: -1.4007, zone: "Vega del Segura" },
+  { name: "Águilas", lat: 37.4062, lon: -1.5833, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Albatera", lat: 38.1922, lon: -0.8264, zone: "Litoral sur de Alicante" },
+  { name: "Albudeite", lat: 38.0289, lon: -1.3853, zone: "Vega del Segura" },
+  { name: "Alcantarilla", lat: 37.9725, lon: -1.2081, zone: "Vega del Segura" },
+  { name: "Aledo", lat: 37.7928, lon: -1.5739, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Algorfa", lat: 38.0858, lon: -0.7967, zone: "Litoral sur de Alicante" },
+  { name: "Alguazas", lat: 38.0514, lon: -1.2422, zone: "Vega del Segura" },
+  { name: "Alhama de Murcia", lat: 37.8508, lon: -1.4253, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Alicante", lat: 38.3452, lon: -0.4815, zone: "Litoral sur de Alicante" },
+  { name: "Almoradí", lat: 38.1092, lon: -0.7917, zone: "Litoral sur de Alicante" },
+  { name: "Archena", lat: 38.1158, lon: -1.3003, zone: "Vega del Segura" },
+  { name: "Aspe", lat: 38.3453, lon: -0.7686, zone: "Litoral sur de Alicante" },
+  { name: "Benejúzar", lat: 38.0778, lon: -0.8389, zone: "Litoral sur de Alicante" },
+  { name: "Benferri", lat: 38.1417, lon: -0.9628, zone: "Litoral sur de Alicante" },
+  { name: "Beniel", lat: 38.0469, lon: -1.0003, zone: "Vega del Segura" },
+  { name: "Benijófar", lat: 38.0811, lon: -0.7381, zone: "Litoral sur de Alicante" },
+  { name: "Bigastro", lat: 38.0628, lon: -0.8953, zone: "Litoral sur de Alicante" },
+  { name: "Blanca", lat: 38.1783, lon: -1.3761, zone: "Vega del Segura" },
+  { name: "Bullas", lat: 38.0461, lon: -1.6703, zone: "Noroeste de Murcia" },
+  { name: "Calasparra", lat: 38.2322, lon: -1.6983, zone: "Noroeste de Murcia" },
+  { name: "Callosa de Segura", lat: 38.1239, lon: -0.8792, zone: "Litoral sur de Alicante" },
+  { name: "Campos del Río", lat: 38.0389, lon: -1.3533, zone: "Vega del Segura" },
+  { name: "Caravaca de la Cruz", lat: 38.1064, lon: -1.8628, zone: "Noroeste de Murcia" },
+  { name: "Cartagena", lat: 37.6155, lon: -0.9875, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "Catral", lat: 38.1583, lon: -0.8039, zone: "Litoral sur de Alicante" },
+  { name: "Cehegín", lat: 38.0928, lon: -1.7989, zone: "Noroeste de Murcia" },
+  { name: "Ceutí", lat: 38.0783, lon: -1.2728, zone: "Vega del Segura" },
+  { name: "Cieza", lat: 38.2403, lon: -1.4194, zone: "Vega del Segura" },
+  { name: "Cox", lat: 38.1403, lon: -0.8856, zone: "Litoral sur de Alicante" },
+  { name: "Crevillente", lat: 38.2486, lon: -0.8089, zone: "Litoral sur de Alicante" },
+  { name: "Daya Nueva", lat: 38.1017, lon: -0.7822, zone: "Litoral sur de Alicante" },
+  { name: "Daya Vieja", lat: 38.0983, lon: -0.7756, zone: "Litoral sur de Alicante" },
+  { name: "Dolores", lat: 38.1389, lon: -0.7708, zone: "Litoral sur de Alicante" },
+  { name: "Elche", lat: 38.2669, lon: -0.6983, zone: "Litoral sur de Alicante" },
+  { name: "Férez", lat: 38.3564, lon: -2.0103, zone: "Alcaraz y Segura" },
+  { name: "Formentera del Segura", lat: 38.0839, lon: -0.7469, zone: "Litoral sur de Alicante" },
+  { name: "Fortuna", lat: 38.1786, lon: -1.1242, zone: "Vega del Segura" },
+  { name: "Fuente Álamo", lat: 37.7208, lon: -1.1714, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "Granja de Rocamora", lat: 38.1528, lon: -0.8903, zone: "Litoral sur de Alicante" },
+  { name: "Guardamar del Segura", lat: 38.0889, lon: -0.6553, zone: "Litoral sur de Alicante" },
+  { name: "Hondón de las Nieves", lat: 38.1706, lon: -0.8967, zone: "Interior de Alicante" },
+  { name: "Hondón de los Frailes", lat: 38.1494, lon: -0.8814, zone: "Interior de Alicante" },
+  { name: "Jacarilla", lat: 38.0608, lon: -0.8664, zone: "Litoral sur de Alicante" },
+  { name: "La Unión", lat: 37.6186, lon: -0.8767, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "Las Torres de Cotillas", lat: 38.0289, lon: -1.2436, zone: "Vega del Segura" },
+  { name: "Librilla", lat: 37.8864, lon: -1.3503, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Lorca", lat: 37.6712, lon: -1.7017, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Lorquí", lat: 38.0817, lon: -1.2522, zone: "Vega del Segura" },
+  { name: "Los Alcázares", lat: 37.7443, lon: -0.8525, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "Los Montesinos", lat: 38.0289, lon: -0.7442, zone: "Litoral sur de Alicante" },
+  { name: "Mazarrón", lat: 37.5978, lon: -1.3142, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "Molina de Segura", lat: 38.0536, lon: -1.2125, zone: "Vega del Segura" },
+  { name: "Moratalla", lat: 38.1889, lon: -1.8906, zone: "Noroeste de Murcia" },
+  { name: "Mula", lat: 38.0411, lon: -1.4903, zone: "Noroeste de Murcia" },
+  { name: "Murcia", lat: 37.9870, lon: -1.1300, zone: "Vega del Segura" },
+  { name: "Ojós", lat: 38.1478, lon: -1.3414, zone: "Vega del Segura" },
+  { name: "Orihuela", lat: 38.0853, lon: -0.9442, zone: "Litoral sur de Alicante" },
+  { name: "Pilar de la Horadada", lat: 37.8653, lon: -0.7925, zone: "Litoral sur de Alicante" },
+  { name: "Pliego", lat: 37.9897, lon: -1.5042, zone: "Noroeste de Murcia" },
+  { name: "Puerto Lumbreras", lat: 37.5628, lon: -1.8103, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Rafal", lat: 38.1039, lon: -0.8181, zone: "Litoral sur de Alicante" },
+  { name: "Redován", lat: 38.1139, lon: -0.9053, zone: "Litoral sur de Alicante" },
+  { name: "Ricote", lat: 38.1528, lon: -1.3642, zone: "Vega del Segura" },
+  { name: "Rojales", lat: 38.0878, lon: -0.7239, zone: "Litoral sur de Alicante" },
+  { name: "San Fulgencio", lat: 38.1139, lon: -0.7208, zone: "Litoral sur de Alicante" },
+  { name: "San Isidro", lat: 38.1672, lon: -0.8406, zone: "Litoral sur de Alicante" },
+  { name: "San Javier", lat: 37.8064, lon: -0.8358, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "San Miguel de Salinas", lat: 37.9803, lon: -0.7892, zone: "Litoral sur de Alicante" },
+  { name: "San Pedro del Pinatar", lat: 37.8358, lon: -0.7914, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "San Vicente del Raspeig", lat: 38.3961, lon: -0.5256, zone: "Litoral sur de Alicante" },
+  { name: "Santa Pola", lat: 38.1917, lon: -0.5556, zone: "Litoral sur de Alicante" },
+  { name: "Santomera", lat: 38.0617, lon: -1.0489, zone: "Vega del Segura" },
+  { name: "Socovos", lat: 38.3333, lon: -1.9833, zone: "Alcaraz y Segura" },
+  { name: "Torre-Pacheco", lat: 37.7436, lon: -0.9536, zone: "Campo de Cartagena y Mazarrón" },
+  { name: "Torrevieja", lat: 37.9789, lon: -0.6822, zone: "Litoral sur de Alicante" },
+  { name: "Totana", lat: 37.7719, lon: -1.5000, zone: "Valle del Guadalentín, Lorca y Águilas" },
+  { name: "Ulea", lat: 38.1389, lon: -1.3314, zone: "Vega del Segura" },
+  { name: "Villanueva del Segura", lat: 38.1697, lon: -1.3506, zone: "Vega del Segura" }
+];
+
+const AEMET_PROXY_URL = "https://jdmarcomct.es/api/aemet-proxy.php";
+const AEMET_REFRESH_MS = 600000;
+let AEMET_ALERTS_DATABASE = {};
+
+async function fetchAemetAlerts() {
+  try {
+    const res = await fetch(AEMET_PROXY_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    AEMET_ALERTS_DATABASE = data || {};
+  } catch (err) {
+    console.error("No se pudieron obtener los avisos de AEMET:", err);
+  }
+}
+
+const WEATHER_UNIT = "celsius"; 
+const WEATHER_REFRESH_MS = 900000; 
+const CITY_DISPLAY_DURATION_MS = 10000;    
+const WEATHER_FORECAST_DAYS = 5;           
+
+const WMO_MAP = { 
+  0: ["☀️","Despejado"], 1: ["🌤️","Poco nublado"], 2: ["⛅","Parcial. nublado"], 3: ["☁️","Nublado"], 
+  45: ["🌫️","Niebla"], 48: ["🌫️","Escarcha"], 51: ["🌦️","Llovizna ligera"], 53: ["🌦️","Llovizna"], 
+  55: ["🌧️","Llovizna fuerte"], 61: ["🌧️","Lluvia ligera"], 63: ["🌧️","Lluvia"], 65: ["🌧️","Lluvia fuerte"], 
+  71: ["🌨️","Nieve ligera"], 73: ["🌨️","Nieve"], 75: ["❄️","Nieve fuerte"], 80: ["🌦️","Chubascos"], 
+  81: ["🌧️","Chubascos fuertes"], 82: ["⛈️","Chubascos muy fuertes"], 95: ["⛈️","Tormenta"], 
+  96: ["⛈️","Tormenta granizo"], 99: ["⛈️","Tormenta fuerte"] 
+};
+
+let weatherCache = {}, currentCityIndex = 0;
+
+const elTime = document.getElementById('clock-time'),
+      elDate = document.getElementById('clock-date'),
+      elBox = document.getElementById('weather-info-box'),
+      elCity = document.getElementById('weather-city'),
+      elIcon = document.getElementById('weather-icon'),
+      elTemp = document.getElementById('weather-temp'),
+      elDesc = document.getElementById('weather-desc'),
+      elHumidity = document.getElementById('weather-humidity'),
+      elWind = document.getElementById('weather-wind'),
+      elCard = document.getElementById('aemet-alert-card'),
+      elBadge = document.getElementById('aemet-badge'),
+      elTitle = document.getElementById('aemet-title'),
+      elDetail = document.getElementById('aemet-detail'),
+      elForecast = document.getElementById('weather-forecast'),
+      tickerTrack = document.getElementById('ticker-track');
+
+function applyCacheBusting() {
+  const version = Date.now();
+  const bust = (url) => {
+    if (!url) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}v=${version}`;
+  };
+
+  document.querySelectorAll('img[data-cachebust]').forEach(el => {
+    el.setAttribute('src', bust(el.getAttribute('src')));
+  });
+}
+
+async function fetchAllCitiesWeather() {
+  const chunkSize = 40; 
+  for (let i = 0; i < CITIES.length; i += chunkSize) {
+    const chunk = CITIES.slice(i, i + chunkSize);
+    const lats = chunk.map(c => c.lat).join(',');
+    const lons = chunk.map(c => c.lon).join(',');
+    const tempUnitParam = WEATHER_UNIT === "fahrenheit" ? "&temperature_unit=fahrenheit" : "";
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=${WEATHER_FORECAST_DAYS}&timezone=auto${tempUnitParam}`;
+
+    try {
+      const res = await fetch(url), data = await res.json();
+      const resArray = Array.isArray(data) ? data : [data];
+      resArray.forEach((cd, index) => { weatherCache[i + index] = cd; });
+    } catch(err) {}
+  }
+}
+
+function renderCityWeather(index, withTransition = true) {
+  const city = CITIES[index], data = weatherCache[index];
+  if (!data || !data.current) return;
+
+  const updateUI = () => {
+    const c = data.current, unitSymbol = WEATHER_UNIT === "fahrenheit" ? "°F" : "°C";
+    const [icon, desc] = WMO_MAP[c.weather_code] || ["🌡️","Desconocido"];
+
+    elCity.textContent = city.name;
+    elIcon.textContent = icon;
+    elTemp.textContent = `${Math.round(c.temperature_2m)}${unitSymbol}`;
+    elDesc.textContent = desc;
+    elHumidity.textContent = `${Math.round(c.relative_humidity_2m)}%`;
+    elWind.textContent = `${Math.round(c.wind_speed_10m)} km/h`;
+    
+    const alertInfo = AEMET_ALERTS_DATABASE[city.zone];
+    if (alertInfo && alertInfo.level) {
+      elCard.className = `aemet-alert-card ${alertInfo.level.toLowerCase()}`;
+      elBadge.textContent = alertInfo.level.toUpperCase();
+      elTitle.textContent = alertInfo.phenomenon || "Aviso Meteorológico";
+      elDetail.textContent = alertInfo.detail || "";
+      elCard.classList.remove('hidden');
+    } else {
+      elCard.classList.add('hidden');
+    }
+
+    renderForecast(data.daily, unitSymbol);
+    if (withTransition) elBox.classList.remove('changing');
+  };
+
+  if (withTransition) {
+    elBox.classList.add('changing');
+    setTimeout(updateUI, 400);
+  } else {
+    updateUI();
+  }
+}
+
+function renderForecast(daily, unitSymbol){
+  if(!daily || !daily.time){ elForecast.innerHTML = ""; return; }
+  elForecast.innerHTML = daily.time.slice(0, WEATHER_FORECAST_DAYS).map((dateStr, i) => {
+    const date = new Date(dateStr + "T00:00:00"); 
+    const dayName = (i === 0) ? "Hoy" : date.toLocaleDateString('es-ES', { weekday: 'short' }).replace('.', ''); 
+    const [icon, desc] = WMO_MAP[daily.weather_code[i]] || ["🌡️", ""];
+    
+    return `<div class="forecast-day">
+      <span class="day-name">${dayName}</span>
+      <div class="day-condition">
+        <span class="icon">${icon}</span>
+        <span class="text">${desc}</span>
+      </div>
+      <span class="day-temps">
+        <span class="max">${Math.round(daily.temperature_2m_max[i])}${unitSymbol}</span>
+        <span class="min">${Math.round(daily.temperature_2m_min[i])}${unitSymbol}</span>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+async function initWeatherSystem() {
+  await Promise.all([ fetchAllCitiesWeather(), fetchAemetAlerts() ]);
+  renderCityWeather(0, false);
+
+  setInterval(() => {
+    if (CITIES.length <= 1) return;
+    currentCityIndex = (currentCityIndex + 1) % CITIES.length;
+    renderCityWeather(currentCityIndex, true);
+  }, CITY_DISPLAY_DURATION_MS);
+
+  setInterval(fetchAllCitiesWeather, WEATHER_REFRESH_MS);
+  setInterval(fetchAemetAlerts, AEMET_REFRESH_MS);
+}
+
+function tickClock(){
+  const now = new Date();
+  elTime.textContent = now.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  elDate.textContent = now.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
+}
+
+function decodeHTML(text) {
+  const doc = new DOMParser().parseFromString(text, 'text/html');
+  return doc.body.textContent || "";
+}
+
+async function loadRSS(){
+  try{
+    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent("https://www.europapress.es/rss/rss.aspx?ch=66")}`);
+    const data = await res.json();
+    if(data.status !== "ok" || !data.items.length) throw new Error();
+    const headlines = data.items.slice(0, 12).map(it => decodeHTML(it.title));
+    tickerTrack.innerHTML = headlines.concat(headlines).map(h => `<span class="item">${h}</span>`).join('');
+    requestAnimationFrame(() => {
+      tickerTrack.style.animationDuration = Math.max(20, (tickerTrack.scrollWidth / 2) / 85) + "s";
+    });
+  }catch(err){ tickerTrack.innerHTML = `<span class="item">Actualizando noticias...</span>`; }
+}
+
+const RELOAD_HOUR = 4;
+const RELOAD_MINUTE = 0;
+
+function scheduleAutoReload() {
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate(), RELOAD_HOUR, RELOAD_MINUTE, 0, 0);
+  if (next <= now) next.setDate(next.getDate() + 1);
+  const msUntilReload = next.getTime() - now.getTime();
+  setTimeout(() => { window.location.reload(); }, msUntilReload);
+}
+
+initWeatherSystem();
+loadDynamicContent();
+tickClock(); setInterval(tickClock, 1000);
+loadRSS(); setInterval(loadRSS, 600000);
+scheduleAutoReload();
+</script>
+</body>
+</html>
