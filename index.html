@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mancomunidad de los Canales del Taibilla - MCT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<!-- Soporte PWA para iOS / Safari Móvil -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pathway+Gothic+One&display=swap" rel="stylesheet">
+
+<!-- API de YouTube Iframe -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<style>
+  :root{
+    --bg: #10151f;   
+    --panel: #161d2b;   
+    --line: #2a3346;   
+    --text: #f2f0ea;   
+    --text-dim: #8b96ac;   
+    --accent: #34d8c1;   
+    --accent-warm: #f5a623;   
+    
+    --aemet-yellow-bg: rgba(236, 201, 75, 0.18);
+    --aemet-yellow-border: #d69e2e;
+    --aemet-yellow-text: #f6e05e;
+
+    --aemet-orange-bg: rgba(237, 137, 54, 0.2);
+    --aemet-orange-border: #dd6b20;
+    --aemet-orange-text: #fbd38d;
+
+    --aemet-red-bg: rgba(229, 62, 62, 0.25);
+    --aemet-red-border: #e53e3e;
+    --aemet-red-text: #feb2b2;
+
+    --ticker-h: clamp(40px, 5vh, 54px);     
+    --brand-footer-h: clamp(75px, 11vh, 110px);    
+    --font-display: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'Consolas', 'SFMono-Regular', 'Menlo', monospace;
+    --font-slogan: 'Breathing', 'Brush Script MT', cursive; 
+    --font-cta: 'Pathway Gothic One', sans-serif;        
+    --side-padding: clamp(16px, 2vw, 32px);
+  }
+
+  @font-face{
+    font-family:'Breathing';
+    src: url('fonts/Breathing.woff2') format('woff2'),
+         url('fonts/Breathing.woff') format('woff');
+    font-weight:normal;
+    font-style:normal;
+    font-display:swap;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--bg); color:var(--text);
+    font-family:var(--font-display);
+    overflow:hidden;
+  }
+
+  .signage{ display:flex; flex-direction:column; width:100vw; height:100vh; }
+  .top-row{ flex:1 1 auto; display:flex; min-height:0; }
+
+  .weather-panel{
+    flex: 0 0 clamp(260px, 22vw, 360px);
+    max-width: 380px;
+    background:var(--panel);
+    border-right:1px solid var(--line); 
+    display:flex; 
+    flex-direction:column;
+    padding:1.8vh 14px 1.8vh var(--side-padding); 
+    position:relative;
+    overflow:hidden;
+  }
+
+  .clock {
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+    background: #ffffff;
+    color: #161d2b;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 1.5vh;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+  }
+  .clock .time {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    font-weight: 600;
+    line-height: 1;
+    color: #161d2b;
+    white-space: nowrap;
+  }
+  .clock .date {
+    margin-top: .3em;
+    font-size: clamp(0.75rem, 0.95vw, 0.95rem);
+    color: #161d2b;
+    opacity: 0.85;
+    text-transform: capitalize;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .weather-info-box {
+    display:flex; flex-direction:column; flex:1 1 auto;
+    transition:opacity .4s ease, transform .4s ease; opacity:1;
+    transform:translateY(0); min-height:0; overflow:hidden;
+  }
+
+  .weather-info-box.changing { opacity:0; transform:translateY(-8px); }
+  .weather-city{ font-size:clamp(0.9rem, 1.1vw, 1.15rem); color:var(--text-dim); text-transform:uppercase; letter-spacing:.1em; margin-bottom:.3em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .weather-main{ display:flex; align-items:center; gap:.4em; }
+  .weather-icon{ font-size:clamp(2.5rem, 4.5vw, 3.8rem); line-height:1; flex-shrink:0; }
+  .weather-temp{ font-size:clamp(2rem, 3.8vw, 3.2rem); font-weight:700; font-family:var(--font-mono); }
+  .weather-desc{ margin-top:.2em; font-size:clamp(0.8rem, 1vw, 1rem); color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .weather-extra{ 
+    display:flex; justify-content:space-between; 
+    font-size:clamp(0.7rem, 0.85vw, 0.85rem); color:var(--text-dim); 
+    background:rgba(255, 255, 255, 0.03); padding:.5em .7em;
+    border-radius:6px; border:1px solid var(--line); margin-top:1vh;
+    flex-shrink: 0;
+  }
+  .weather-extra b{ color:var(--text); font-family:var(--font-mono); }
+
+  .aemet-alert-card {
+    margin:1vh 0; padding:6px 8px; border-radius:6px; border:1px solid;
+    display:flex; flex-direction:column; gap:3px; font-size:0.75rem; transition:all 0.3s ease;
+    flex-shrink: 0;
+  }
+  .aemet-alert-card.hidden { display:none; }
+
+  .aemet-alert-card.amarillo { background:var(--aemet-yellow-bg); border-color:var(--aemet-yellow-border); color:var(--aemet-yellow-text); }
+  .aemet-alert-card.naranja { background:var(--aemet-orange-bg); border-color:var(--aemet-orange-border); color:var(--aemet-orange-text); }
+  .aemet-alert-card.rojo { background:var(--aemet-red-bg); border-color:var(--aemet-red-border); color:var(--aemet-red-text); animation:pulseRed 2s infinite ease-in-out; }
+
+  @keyframes pulseRed {
+    0%, 100% { border-color:var(--aemet-red-border); box-shadow:0 0 0px rgba(229,62,62,0); }
+    50% { border-color:#ff6b6b; box-shadow:0 0 8px rgba(229,62,62,0.5); }
+  }
+
+  .aemet-header { display:flex; align-items:center; justify-content:space-between; font-weight:700; text-transform:uppercase; font-size:0.68rem; letter-spacing:0.05em; }
+  .aemet-badge { padding:2px 5px; border-radius:3px; font-size:0.65rem; font-weight:800; color:#10151f; }
+  .amarillo .aemet-badge { background:#f6e05e; }
+  .naranja .aemet-badge { background:#ed8936; color:#fff; }
+  .rojo .aemet-badge { background:#e53e3e; color:#fff; }
+
+  .aemet-title { font-weight:700; font-size:0.8rem; margin-top:2px; line-height:1.2; }
+  .aemet-detail { font-size:0.7rem; opacity:0.9; line-height:1.2; }
+
+  .weather-forecast{ 
+    display:flex; flex-direction:column; gap:.1em; flex:1 1 auto; min-height:0; 
+    justify-content:space-evenly; overflow-y:auto; border-top:1px solid var(--line);
+    padding-top:0.8vh; margin-top:auto;
+  }
+  
+  .forecast-day{ display:flex; align-items:center; justify-content:space-between; gap:.3em; padding:.18em 0; border-bottom:1px solid var(--line); }
+  .forecast-day:last-child{ border-bottom:none; }
+  .forecast-day .day-name{ flex:0 0 3em; font-size:clamp(0.68rem, 0.8vw, 0.8rem); color:var(--text-dim); text-transform:capitalize; }
+  
+  .forecast-day .day-condition{ 
+    flex:1 1 auto; display:flex; align-items:center; gap:.25em; 
+    font-size:clamp(0.65rem, 0.78vw, 0.78rem); color:var(--text); overflow:hidden;
+  }
+  .forecast-day .day-condition .icon{ flex:0 0 auto; font-size:clamp(0.8rem, 1vw, 1rem); }
+  .forecast-day .day-condition .text{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; opacity:0.9; }
+
+  .forecast-day .day-temps{ flex:0 0 auto; text-align:right; font-family:var(--font-mono); font-size:clamp(0.68rem, 0.8vw, 0.8rem); }
+  .forecast-day .day-temps .max{ color:var(--text); font-weight:600; }
+  .forecast-day .day-temps .min{ color:var(--text-dim); margin-left:.2em; }
+
+  .content-panel{ flex:1 1 80%; position:relative; background:#000; overflow:hidden; }
+  
+  .slide{
+    position:absolute; inset:0; width:100%; height:100%; opacity:0;
+    visibility:hidden; transition:opacity 1s ease-in-out, visibility 1s ease-in-out;
+    z-index:1; background:#000;
+  }
+  
+  .slide.active{ opacity:1; visibility:visible; z-index:2; }
+  .slide img, .slide video { width:100%; height:100%; object-fit:cover; }
+
+  .news-bg { transform:scale(1); transition:transform 0.5s ease-out; }
+  .slide.active .news-bg { animation:kenburns 11s ease-in-out forwards; }
+  @keyframes kenburns { from { transform:scale(1); } to { transform:scale(1.06); } }
+
+  .news-overlay{ position:absolute; inset:0; background:linear-gradient(0deg, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 50%, transparent 100%); }
+  .news-text{ position:absolute; left:0; right:0; bottom:0; padding:4vh clamp(16px, 3vw, 32px); max-width:92%; }
+
+  .news-kicker, .news-title, .news-subtitle { opacity:0; transform:translateY(30px); }
+  .slide.active .news-kicker { animation:newsIn 0.6s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:0.2s; }
+  .slide.active .news-title { animation:newsIn 0.7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:0.4s; }
+  .slide.active .news-subtitle { animation:newsIn 0.7s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:0.6s; }
+
+  @keyframes newsIn { to { opacity:1; transform:translateY(0); } }
+
+  .news-kicker{ display:inline-block; color:#1a1200; background:var(--accent-warm); font-weight:700; letter-spacing:.1em; text-transform:uppercase; font-size:clamp(0.7rem, 0.9vw, 0.85rem); padding:.3em .8em; border-radius:2px; margin-bottom:0.8em; }
+  .news-title{ margin:0 0 .3em; font-size:clamp(1.5rem, 2.8vw, 2.5rem); font-weight:700; line-height:1.2; text-shadow:0 2px 10px rgba(0,0,0,0.5); }
+  .news-subtitle{ margin:0; color:#e4e1d8; font-size:clamp(0.9rem, 1.2vw, 1.2rem); line-height:1.35; text-shadow:0 1px 6px rgba(0,0,0,0.5); }
+
+  .ticker-bar{ flex:0 0 var(--ticker-h); height:var(--ticker-h); display:flex; align-items:stretch; background:var(--panel); border-top:1px solid var(--line); }
+  .ticker-label{ flex:0 0 auto; display:flex; align-items:center; gap:.5em; padding:0 16px 0 var(--side-padding); background:var(--accent-warm); color:#1a1200; font-weight:700; letter-spacing:.08em; font-size:clamp(0.75rem,0.95vw,0.95rem); white-space:nowrap; }
+  .ticker-viewport{ flex:1 1 auto; position:relative; overflow:hidden; }
+  .ticker-track{ position:absolute; top:0; left:0; height:100%; display:flex; align-items:center; white-space:nowrap; will-change:transform; animation:scroll-left linear infinite; font-size:clamp(0.85rem,1.1vw,1.1rem); }
+  .ticker-track .item{ padding:0 3vw; color:var(--text); }
+  .ticker-track .item::before{ content:"●"; color:var(--accent-warm); margin-right:1em; font-size:.6em; vertical-align:middle; }
+  @keyframes scroll-left{ from{ transform:translateX(0); } to { transform:translateX(-50%); } }
+
+  .brand-footer {
+    flex:0 0 var(--brand-footer-h); height:var(--brand-footer-h);
+    background-color:#ffffff; color:#1a202c; display:flex;
+    justify-content:space-between; align-items:center;
+    padding:0 16px 0 var(--side-padding); border-top:2px solid #e2e8f0;
+    gap: 15px;
+  }
+  
+  .footer-left { display:flex; align-items:center; gap:clamp(10px, 1.5vw, 25px); height:100%; flex-shrink: 0; }
+  .logo-transicion { height:65%; width:auto; max-width:240px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .logo-transicion img { max-width:100%; max-height:100%; object-fit:contain; }
+  .logo-mct { height:65%; width:auto; max-width:160px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .logo-mct img { max-width:100%; max-height:100%; object-fit:contain; }
+  .footer-slogan { font-family:var(--font-slogan); font-size:clamp(1rem, 1.2vw, 1.3rem); color:#393735; margin-left:5px; white-space:nowrap; }
+  .footer-right { display:flex; align-items:center; gap:clamp(10px, 1.5vw, 25px); flex-grow:1; justify-content:flex-end; height:100%; }
+  .cta-redes { font-family:var(--font-cta); font-size:clamp(1.1rem, 1.4vw, 1.6rem); letter-spacing:0.03em; font-weight:400; color:#393735; text-align:right; line-height:1; white-space:nowrap; }
+  .qr-box { height:70%; aspect-ratio: 1/1; background:#edf2f7; border:1px dashed #cbd5e0; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
+  .qr-box img { max-width:100%; max-height:100%; object-fit:contain; }
+
+  .fs-toggle-btn {
+    position: fixed; top: 12px; right: 12px; z-index: 9999;
+    background: rgba(22, 29, 43, 0.85); color: var(--text);
+    border: 1px solid var(--accent); border-radius: 8px;
+    padding: 8px 12px; font-size: 0.8rem; font-weight: 600;
+    backdrop-filter: blur(4px); display: flex; align-items: center; gap: 6px;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  .fs-toggle-btn.hidden { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<button class="fs-toggle-btn" id="fs-btn"><span>⛶</span> Pantalla Completa</button>
+
+<div class="signage" id="signage-root">
+  <div class="top-row">
+    <aside class="weather-panel">
+      <div class="clock">
+        <div class="time" id="clock-time">--:--</div>
+        <div class="date" id="clock-date">-</div>
+      </div>
+      
+      <div class="weather-info-box" id="weather-info-box">
+        <div class="weather-city" id="weather-city">Cargando…</div>
+        <div class="weather-main">
+          <div class="weather-icon" id="weather-icon">⏳</div>
+          <div class="weather-temp" id="weather-temp">--°</div>
+        </div>
+        <div class="weather-desc" id="weather-desc">Obteniendo datos…</div>
+
+        <div class="weather-extra">
+          <div>Humedad <b id="weather-humidity">--%</b></div>
+          <div>Viento <b id="weather-wind">-- km/h</b></div>
+        </div>
+        
+        <div class="aemet-alert-card hidden" id="aemet-alert-card">
+          <div class="aemet-header">
+            <span>⚠️ AVISO AEMET</span>
+            <span class="aemet-badge" id="aemet-badge">AMARILLO</span>
+          </div>
+          <div class="aemet-title" id="aemet-title">Aviso activo</div>
+          <div class="aemet-detail" id="aemet-detail">Detalles del aviso</div>
+        </div>
+
+        <div class="weather-forecast" id="weather-forecast"></div>
+      </div>
+    </aside>
+
+    <main class="content-panel" id="content-panel">
+      <!-- Carga dinámicamente noticias y vídeos aquí -->
+    </main>
+  </div>
+
+  <section class="ticker-bar">
+    <div class="ticker-label">📰 NOTICIAS DE ESPAÑA</div>
+    <div class="ticker-viewport">
+      <div class="ticker-track" id="ticker-track">
+        <span class="item">Cargando titulares…</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="brand-footer">
+    <div class="footer-left">
+      <div class="logo-transicion">
+        <img src="Imagenes/footer/VICE3.jpg" alt="Ministerio para la Transición Ecológica" data-cachebust>
+      </div>
+      <div class="logo-mct">
+        <img src="Imagenes/footer/logomct.png" alt="MCT" data-cachebust>
+      </div>
+      <span class="footer-slogan">Muy Cerca de Ti</span>
+    </div>
+    <div class="footer-right">
+      <div class="qr-box">
+        <img src="Imagenes/footer/qrmct.png" alt="QR de la MCT" data-cachebust>
+      </div>
+      <div class="cta-redes">¡Sigue a la MCT en redes sociales!</div>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ===============================================================
+// CONFIGURACIÓN DE LAS HOJAS DE CÁLCULO DE GOOGLE (CSV)
+// ===============================================================
+const URL_CSV_NOTICIAS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDgXkCTepu3GbZ9G7T_s-qheD0AnQ1JVwDZronL3eYM50z4eCnFcz-ArDSbEJRuqJB50WHczyVfO4T/pub?gid=0&single=true&output=csv";
+const URL_CSV_VIDEOS   = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQDgXkCTepu3GbZ9G7T_s-qheD0AnQ1JVwDZronL3eYM50z4eCnFcz-ArDSbEJRuqJB50WHczyVfO4T/pub?gid=797206478&single=true&output=csv";
+
+// Helper para convertir enlaces de Google Drive / Dropbox a directos
+function formatMediaURL(url) {
+  if (!url) return '';
+  let clean = url.trim();
+  // Transformar enlaces de Google Drive compartir a vista previa/descarga directa
+  if (clean.includes('drive.google.com')) {
+    const idMatch = clean.match(/\/d\/([^\/]+)/) || clean.match(/id=([^&]+)/);
+    if (idMatch && idMatch[1]) {
+      return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+    }
+  }
+  return clean;
+}
+
+function parseCSV(text) {
+  const lines = text.split('\n').filter(l => l.trim() !== '');
+  if (lines.length === 0) return [];
+
+  const cleanKey = key => key.trim().replace(/^"/, '').replace(/"$/, '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const rawHeaders = lines[0].split(',');
+  const headers = rawHeaders.map(cleanKey);
+
+  const result = [];
+  for (let i = 1; i < lines.length; i++) {
+    const currentline = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+    const obj = {};
+    for (let j = 0; j < headers.length; j++) {
+      let val = currentline[j] ? currentline[j].trim() : '';
+      val = val.replace(/^"/, '').replace(/"$/, '');
+      obj[headers[j]] = val;
+    }
+    result.push(obj);
+  }
+  return result;
+}
+
+function extractYouTubeID(url) {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
+let slides = [];
+let currentSlideIndex = 0;
+let slideTimeout = null;
+let ytPlayer = null;
+let isYTReady = false;
+
+function onYouTubeIframeAPIReady() {
+  isYTReady = true;
+}
+
+async function loadDynamicContent() {
+  const container = document.getElementById('content-panel');
+  try {
+    const bust = `&t=${Date.now()}`;
+    
+    const [resNoticias, resVideos] = await Promise.all([
+      fetch(`${URL_CSV_NOTICIAS}${bust}`).catch(() => null),
+      fetch(`${URL_CSV_VIDEOS}${bust}`).catch(() => null)
+    ]);
+
+    let itemsNoticias = [];
+    let itemsVideos = [];
+
+    if (resNoticias && resNoticias.ok) {
+      const text = await resNoticias.text();
+      itemsNoticias = parseCSV(text).map(item => ({ ...item, defaultType: 'news' }));
+    }
+
+    if (resVideos && resVideos.ok) {
+      const text = await resVideos.text();
+      itemsVideos = parseCSV(text).map(item => ({ ...item, defaultType: 'video' }));
+    }
+
+    const rawItems = [...itemsNoticias, ...itemsVideos];
+
+    // Filtrar por columna Activa con 'SI' o 'SÍ'
+    const items = rawItems.filter(item => {
+      const activaVal = (item['activa'] || '').trim().toUpperCase();
+      return activaVal === 'SI' || activaVal === 'SÍ';
+    });
+
+    if (items.length === 0) {
+      container.innerHTML = '<div style="color:white; padding:40px; text-align:center;">No hay contenidos activos marcados con "SI".</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+
+    items.forEach((item, idx) => {
+      const slideDiv = document.createElement('div');
+      slideDiv.className = `slide ${idx === 0 ? 'active' : ''}`;
+      
+      const rawMediaUrl = formatMediaURL(item['imagen_url'] || item['url'] || item['video'] || item['videos'] || '');
+      const ytId = extractYouTubeID(rawMediaUrl);
+      
+      const type = ytId ? 'youtube' : ((item['tipo'] || item['type'] || item.defaultType || 'news').toLowerCase());
+      slideDiv.setAttribute('data-type', type);
+
+      const durRaw = parseInt(item['duracion'] || item['duration']);
+      const duration = !isNaN(durRaw) && durRaw > 0 ? durRaw * 1000 : 10000;
+      slideDiv.setAttribute('data-duration', duration);
+
+      if (type === 'youtube') {
+        slideDiv.setAttribute('data-youtube-id', ytId);
+        slideDiv.innerHTML = `<div id="yt-player-${idx}" style="width:100%;height:100%;"></div>`;
+      } else if (type === 'video') {
+        // Vídeo directo MP4/WebM
+        slideDiv.innerHTML = `
+          <video src="${rawMediaUrl}" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+        `;
+      } else {
+        // Noticia / Imagen
+        const antetituloVal = item['antetitulo'] || 'ACTUALIDAD';
+        const titularVal    = item['titular']    || '';
+        const subtituloVal  = item['subtitulo']  || '';
+
+        slideDiv.innerHTML = `
+          <img class="news-bg" src="${rawMediaUrl}" alt="${titularVal}">
+          <div class="news-overlay"></div>
+          <div class="news-text">
+            ${antetituloVal ? `<div class="news-kicker">${antetituloVal}</div>` : ''}
+            <h2 class="news-title">${titularVal}</h2>
+            ${subtituloVal ? `<p class="news-subtitle">${subtituloVal}</p>` : ''}
+          </div>
+        `;
+      }
+
+      container.appendChild(slideDiv);
+    });
+
+    slides = document.querySelectorAll('.slide');
+    if (slides.length > 0) {
+      scheduleNext(slides[0]);
+    }
+  } catch (err) {
+    console.error("Error al cargar los contenidos:", err);
+  }
+}
+
+function rotateSlides() {
+  if (!slides || slides.length === 0) return;
+  
+  const currentSlide = slides[currentSlideIndex];
+  currentSlide.classList.remove('active');
+
+  if (ytPlayer && typeof ytPlayer.destroy === 'function') {
+    try { ytPlayer.destroy(); } catch(e) {}
+    ytPlayer = null;
+  }
+
+  currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+  const nextSlide = slides[currentSlideIndex];
+  nextSlide.classList.add('active');
+  scheduleNext(nextSlide);
+}
+
+function scheduleNext(slideElement) {
+  clearTimeout(slideTimeout);
+  const type = slideElement.getAttribute('data-type');
+
+  if (type === 'youtube') {
+    const videoId = slideElement.getAttribute('data-youtube-id');
+    const playerContainer = slideElement.querySelector('div[id^="yt-player-"]');
+    
+    if (videoId && playerContainer && isYTReady) {
+      ytPlayer = new YT.Player(playerContainer.id, {
+        videoId: videoId,
+        playerVars: { 'autoplay': 1, 'controls': 0, 'mute': 1, 'rel': 0, 'modestbranding': 1, 'playsinline': 1 },
+        events: {
+          'onReady': (event) => { event.target.playVideo(); },
+          'onStateChange': (event) => {
+            if (event.data === YT.PlayerState.ENDED) rotateSlides();
+          },
+          'onError': () => { slideTimeout = setTimeout(rotateSlides, 5000); }
+        }
+      });
+    } else {
+      slideTimeout = setTimeout(rotateSlides, 10000);
+    }
+  } else if (type === 'video') {
+    const videoEl = slideElement.querySelector('video');
+    if (videoEl) {
+      videoEl.currentTime = 0;
+      videoEl.play().catch(() => {});
+      videoEl.onended = () => rotateSlides();
+    } else {
+      slideTimeout = setTimeout(rotateSlides, 10000);
+    }
+  } else {
+    const duration = parseInt(slideElement.getAttribute('data-duration')) || 10000;
+    slideTimeout = setTimeout(rotateSlides, duration);
+  }
+}
+
+// ---------------------------------------------------------------
+// PANTALLA COMPLETA
+// ---------------------------------------------------------------
+const fsBtn = document.getElementById('fs-btn');
+function toggleFullscreen() {
+  const doc = document.documentElement;
+  const isFS = document.fullscreenElement || document.webkitFullscreenElement;
+
+  if (!isFS) {
+    const req = doc.requestFullscreen || doc.webkitRequestFullscreen;
+    if (req) req.call(doc).then(() => fsBtn.classList.add('hidden')).catch(() => {});
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document);
+  }
+}
+
+['fullscreenchange', 'webkitfullscreenchange'].forEach(evt => {
+  document.addEventListener(evt, () => {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      fsBtn.classList.add('hidden');
+    } else {
+      fsBtn.classList.remove('hidden');
+    }
+  });
+});
+fsBtn.addEventListener('click', toggleFullscreen);
+
+// ---------------------------------------------------------------
+// CLIMA COMPLETO (LOCALIDADES Y PREDICCIÓN A 5 DÍAS)
+// ---------------------------------------------------------------
+const CITIES = [
+  { name: "Murcia", lat: 37.9870, lon: -1.1300 },
+  { name: "Cartagena", lat: 37.6155, lon: -0.9875 },
+  { name: "Alicante", lat: 38.3452, lon: -0.4815 },
+  { name: "Lorca", lat: 37.6712, lon: -1.7017 },
+  { name: "Torrevieja", lat: 37.9789, lon: -0.6822 },
+  { name: "Orihuela", lat: 38.0853, lon: -0.9442 },
+  { name: "Caravaca", lat: 38.1064, lon: -1.8628 }
+];
+
+const WMO_MAP = { 
+  0: ["☀️","Despejado"], 1: ["🌤️","Poco nublado"], 2: ["⛅","Parcial. nublado"], 3: ["☁️","Nublado"], 
+  45: ["🌫️","Niebla"], 61: ["🌧️","Lluvia ligera"], 63: ["🌧️","Lluvia"], 80: ["🌦️","Chubascos"], 95: ["⛈️","Tormenta"]
+};
+
+let weatherCache = {}, currentCityIndex = 0;
+
+async function fetchAllCitiesWeather() {
+  const lats = CITIES.map(c => c.lat).join(',');
+  const lons = CITIES.map(c => c.lon).join(',');
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&forecast_days=5&timezone=auto`;
+
+  try {
+    const res = await fetch(url), data = await res.json();
+    const resArray = Array.isArray(data) ? data : [data];
+    resArray.forEach((cd, index) => { weatherCache[index] = cd; });
+  } catch(err) {}
+}
+
+function renderCityWeather(index) {
+  const city = CITIES[index], data = weatherCache[index];
+  if (!data || !data.current) return;
+
+  const c = data.current;
+  const [icon, desc] = WMO_MAP[c.weather_code] || ["🌡️","Desconocido"];
+
+  document.getElementById('weather-city').textContent = city.name;
+  document.getElementById('weather-icon').textContent = icon;
+  document.getElementById('weather-temp').textContent = `${Math.round(c.temperature_2m)}°C`;
+  document.getElementById('weather-desc').textContent = desc;
+  document.getElementById('weather-humidity').textContent = `${Math.round(c.relative_humidity_2m)}%`;
+  document.getElementById('weather-wind').textContent = `${Math.round(c.wind_speed_10m)} km/h`;
+
+  // Renderizado de la predicción semanal a 5 días
+  const forecastEl = document.getElementById('weather-forecast');
+  if (data.daily && data.daily.time) {
+    const days = data.daily.time;
+    forecastEl.innerHTML = days.map((dateStr, dIdx) => {
+      const d = new Date(dateStr);
+      const dayName = d.toLocaleDateString('es-ES', { weekday: 'short' });
+      const wCode = data.daily.weather_code[dIdx];
+      const [dIcon, dDesc] = WMO_MAP[wCode] || ["🌡️", ""];
+      const maxT = Math.round(data.daily.temperature_2m_max[dIdx]);
+      const minT = Math.round(data.daily.temperature_2m_min[dIdx]);
+
+      return `
+        <div class="forecast-day">
+          <span class="day-name">${dayName}</span>
+          <div class="day-condition">
+            <span class="icon">${dIcon}</span>
+            <span class="text">${dDesc}</span>
+          </div>
+          <div class="day-temps">
+            <span class="max">${maxT}°</span>
+            <span class="min">${minT}°</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clock-time').textContent = now.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  document.getElementById('clock-date').textContent = now.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
+}
+
+async function loadRSS(){
+  try {
+    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent("https://www.europapress.es/rss/rss.aspx?ch=66")}`);
+    const data = await res.json();
+    if(data.status === "ok" && data.items.length) {
+      const headlines = data.items.slice(0, 10).map(it => it.title);
+      const track = document.getElementById('ticker-track');
+      track.innerHTML = headlines.concat(headlines).map(h => `<span class="item">${h}</span>`).join('');
+    }
+  } catch(err) {}
+}
+
+// Inicialización
+fetchAllCitiesWeather().then(() => renderCityWeather(0));
+setInterval(() => {
+  currentCityIndex = (currentCityIndex + 1) % CITIES.length;
+  renderCityWeather(currentCityIndex);
+}, 10000);
+
+loadDynamicContent();
+tickClock(); setInterval(tickClock, 1000);
+loadRSS(); setInterval(loadRSS, 600000);
+</script>
+</body>
+</html>
